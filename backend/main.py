@@ -9,7 +9,7 @@ import time
 
 app = FastAPI()
 
-# Define the zone polygon as a normalized array
+# ZONE_POLYGONを正規化された配列として定義
 ZONE_POLYGON = np.array([
     [0, 0],
     [0.5, 0],
@@ -17,10 +17,10 @@ ZONE_POLYGON = np.array([
     [0, 1]
 ])
 
-# Load the YOLO model
+# YOLOモデルを読み込む
 model = YOLO("yolov8l.pt")
 
-# Initialize the box annotator
+# ボックスアノテーターを初期化
 box_annotator = sv.BoxAnnotator(
     thickness=2,
     text_thickness=2,
@@ -31,12 +31,12 @@ box_annotator = sv.BoxAnnotator(
 async def websocket_endpoint(websocket: WebSocket):
     await websocket.accept()
     
-    # Initialize video capture
+    # ビデオキャプチャを初期化
     cap = cv2.VideoCapture(0)
     cap.set(cv2.CAP_PROP_FRAME_WIDTH, 1920)
     cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 1080)
 
-    # Define the zone polygon in actual pixel values
+    # 実際のピクセル値でゾーンポリゴンを定義
     zone_polygon = (ZONE_POLYGON * np.array([1920, 1080])).astype(int)
     zone = sv.PolygonZone(polygon=zone_polygon, frame_resolution_wh=(1920, 1080))
     zone_annotator = sv.PolygonZoneAnnotator(
@@ -48,7 +48,7 @@ async def websocket_endpoint(websocket: WebSocket):
     )
 
     detection_start_time = None
-    detection_threshold = 0.8  # 80% confidence threshold
+    detection_threshold = 0.8  # 80%の信頼度閾値
 
     try:
         while True:
@@ -56,20 +56,21 @@ async def websocket_endpoint(websocket: WebSocket):
             if not ret:
                 break
 
-            # Apply software adjustments to widen the FOV
+            # FOVを広げるためのソフトウェア調整を適用
             h, w = frame.shape[:2]
-            new_w = int(w * 1.5)  # Adjust this factor to widen the FOV
+            new_w = int(w * 1.5)  # この係数を調整してFOVを広げる
             new_h = int(h * 1.5)
             frame = cv2.resize(frame, (new_w, new_h))
             frame = frame[int(new_h/2-h/2):int(new_h/2+h/2), int(new_w/2-w/2):int(new_w/2+w/2)]
+            frame = np.ascontiguousarray(frame)  # フレームを連続配列に変換
 
-            # Perform object detection
+            # オブジェクト検出を実行
             results = model(frame, agnostic_nms=True)[0]
             
-            # Convert YOLO results to detections
+            # YOLOの結果を検出結果に変換
             detections = sv.Detections.from_yolov8(results)
             
-            # Generate labels and filter detections for 'person' with confidence >= 80%
+            # ラベルを生成し、信頼度が80%以上の「person」をフィルタリング
             labels = [
                 f"{model.model.names[class_id]} {confidence:0.2f}"
                 for _, confidence, class_id, _ in detections
@@ -113,15 +114,17 @@ async def websocket_endpoint(websocket: WebSocket):
                 await websocket.send_text(json.dumps({"countdown": 0}))
                 print("Countdown reset")
 
-            # Annotate frame with bounding boxes and zone polygon
+            # フレームにバウンディングボックスとゾーンポリゴンを注釈
+            frame = np.ascontiguousarray(frame)  # フレームを連続配列に変換
+            print(f"Frame is contiguous: {frame.flags['C_CONTIGUOUS']}")  # デバッグステートメント
             frame = box_annotator.annotate(scene=frame, detections=detections, labels=labels)
             zone.trigger(detections=detections)
             frame = zone_annotator.annotate(scene=frame)
 
-            # Send the bounding box data over the WebSocket
+            # バウンディングボックスデータをWebSocket経由で送信
             await websocket.send_text(json.dumps(bbox_data))
 
-            # Control the frame rate
+            # フレームレートを制御
             await asyncio.sleep(0.03)
 
     except Exception as e:
