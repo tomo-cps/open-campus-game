@@ -1,7 +1,7 @@
 # CPS GAMES
 ## AIを欺いてゴールを目指せ！
-![00_sample](00_sample.png)
-![01_sample](01_sample.png)
+![00_sample](sample/00_sample.png)
+![01_sample](sample/01_sample.png)
 
 ## How to run
 ### backend
