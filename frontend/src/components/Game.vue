@@ -57,59 +57,75 @@ export default {
     return {
       bboxes: [],
       websocket: null,
-      videoWidth: 1280,
-      videoHeight: 720,
+      videoWidth: 1920,
+      videoHeight: 1080,
       gameOver: false,
-      gameClear: false, // New state for game clear
+      gameClear: false,
       gameOverImage: require('@/assets/game_over.gif'),
-      gameClearImage: require('@/assets/game_clear.gif'), // New image for game clear
+      gameClearImage: require('@/assets/game_clear_v3.gif'),
       continueImage: require('@/assets/continue.png'),
-      readyImage: require('@/assets/ready.png'), // New image for Ready
-      goImage: require('@/assets/go.png'), // New image for Go
+      readyImage: require('@/assets/ready.png'),
+      goImage: require('@/assets/go.png'),
       countdown: 0,
       showContinue: false,
-      showReady: true, // Show Ready initially
-      showGo: false, // Show Go after Ready
+      showReady: true,
+      showGo: false,
       countdownImages: [
         require('@/assets/3.png'),
         require('@/assets/2.png'),
         require('@/assets/1.png')
       ],
-      backgroundMusic: require('@/assets/sounds/mario_1.mp3'),
+      backgroundMusic: '',
       gameOverSound: require('@/assets/sounds/game_over.mp3'),
-      gameClearSound: require('@/assets/sounds/game_clear.mp3'), // New sound for game clear
+      gameClearSound: require('@/assets/sounds/game_clear.mp3'),
       blockImage: require('@/assets/block.png'),
-      numberOfBlocks: 50, // Adjust the number of blocks you want to display
-      musicIconPath: mdiVolumeOff, // Default icon path for music off
-      isMusicPlaying: false // Track if the music is playing
+      numberOfBlocks: 50,
+      musicIconPath: mdiVolumeHigh, // Ensure the icon is set to volume high initially
+      isMusicPlaying: true // Ensure music is playing initially
     };
   },
   mounted() {
+    this.selectRandomMusic();
     this.startVideoStream();
     window.addEventListener('keydown', this.handleKeyDown);
-    this.playMusic(); // 追加して音楽を再生
     this.showReadyGoSequence();
   },
-  beforeUnmount() { // Changed from beforeDestroy to beforeUnmount
+  beforeUnmount() {
     window.removeEventListener('keydown', this.handleKeyDown);
   },
   methods: {
+    selectRandomMusic() {
+      const musicFiles = [
+        require('@/assets/sounds/01_mario_bgm.mp3'),
+        require('@/assets/sounds/02_mario_bgm.mp3'),
+        require('@/assets/sounds/03_mario_bgm.mp3'),
+        require('@/assets/sounds/04_mario_bgm.mp3'),
+        require('@/assets/sounds/05_mario_bgm.mp3')
+      ];
+      this.backgroundMusic = musicFiles[Math.floor(Math.random() * musicFiles.length)];
+      this.$nextTick(() => {
+        const audioElement = this.$refs.audio;
+        audioElement.load();
+        this.playMusic(); // Ensure music starts playing after loading
+      });
+    },
     showReadyGoSequence() {
       setTimeout(() => {
         this.showReady = false;
         this.showGo = true;
         setTimeout(() => {
           this.showGo = false;
-          this.connectWebSocket(); // Start WebSocket connection after showing Ready and Go
-        }, 1000); // Show Go for 1 second
-      }, 2000); // Show Ready for 2 seconds
+          this.connectWebSocket();
+          this.$refs.video.style.transform = 'none';
+        }, 1000);
+      }, 2000);
     },
     connectWebSocket() {
       this.websocket = new WebSocket("ws://localhost:8000/ws");
       this.websocket.onopen = () => {
         console.log("WebSocket connection established");
       };
-      this.websocket.onmessage = this.handleWebSocketMessage;
+      this.websocket.onmessage = this.handleWebSocketMessage.bind(this);
       this.websocket.onerror = (error) => {
         console.error("WebSocket error:", error);
       };
@@ -120,11 +136,11 @@ export default {
     handleWebSocketMessage(event) {
       const data = JSON.parse(event.data);
       if (data.game_over) {
-        if (!this.gameClear) { // Check if game is already cleared
+        if (!this.gameClear) {
           this.gameOver = true;
           this.stopMusic();
           this.playGameOverSound();
-          this.pauseVideoForDuration(10000); // Pause the video for 10 seconds
+          this.pauseVideoForDuration(10000);
           this.showContinueWithDelay();
         }
       } else if (data.countdown !== undefined) {
@@ -195,7 +211,7 @@ export default {
         });
       }
     },
-    playGameClearSound() { // New method to play game clear sound
+    playGameClearSound() {
       const gameClearAudioElement = this.$refs.gameClearAudio;
       if (gameClearAudioElement) {
         gameClearAudioElement.volume = 1.0;
@@ -213,6 +229,7 @@ export default {
           videoElement.play();
           this.videoWidth = videoElement.videoWidth;
           this.videoHeight = videoElement.videoHeight;
+          videoElement.style.transform = 'none';
         };
       } catch (error) {
         console.error("Error accessing the camera: ", error);
@@ -228,7 +245,7 @@ export default {
       }
     },
     async showContinueWithDelay() {
-      await this.sleep(3000); // Wait for 3 seconds
+      await this.sleep(3000);
       this.showContinue = true;
     },
     sleep(ms) {
@@ -241,7 +258,7 @@ export default {
       if (event.code === 'Space' && !this.gameOver) {
         this.gameClear = true;
         this.stopMusic();
-        this.playGameClearSound(); // Play game clear sound
+        this.playGameClearSound();
         this.pauseVideoForDuration(10000);
         this.showContinueWithDelay();
       }
@@ -270,6 +287,7 @@ html, body, #app {
   height: 100%;
   object-fit: cover;
   cursor: pointer;
+  transform: none !important; /* Ensure no transformation is applied */
 }
 
 .bounding-box {
@@ -306,8 +324,7 @@ html, body, #app {
 .game-over img {
   max-width: 100%;
   max-height: 100%;
-  width: 800px;
-  height: 800px;
+  width: 1500px;
   border-radius: 10px;
 }
 
@@ -322,8 +339,7 @@ html, body, #app {
 .game-clear img {
   max-width: 100%;
   max-height: 100%;
-  width: 800px;
-  height: 800px;
+  width: 3000px;
   border-radius: 10px;
 }
 
@@ -353,7 +369,7 @@ html, body, #app {
 }
 
 .block {
-  width: 35px; /* Adjust the size of the blocks */
+  width: 35px;
   height: auto;
 }
 
@@ -381,8 +397,7 @@ html, body, #app {
 .ready img, .go img {
   max-width: 100%;
   max-height: 100%;
-  width: 300px; /* 画像の幅を調整 */
-  height: 300px; /* 画像の高さを調整 */
+  width: 300px;
+  height: 300px;
 }
-
 </style>

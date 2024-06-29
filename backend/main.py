@@ -1,6 +1,6 @@
-from fastapi import FastAPI, WebSocket
 import cv2
 import numpy as np
+from fastapi import FastAPI, WebSocket
 from ultralytics import YOLO
 import supervision as sv
 import asyncio
@@ -33,12 +33,12 @@ async def websocket_endpoint(websocket: WebSocket):
     
     # Initialize video capture
     cap = cv2.VideoCapture(0)
-    cap.set(cv2.CAP_PROP_FRAME_WIDTH, 1280)
-    cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 720)
+    cap.set(cv2.CAP_PROP_FRAME_WIDTH, 1920)
+    cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 1080)
 
     # Define the zone polygon in actual pixel values
-    zone_polygon = (ZONE_POLYGON * np.array([1280, 720])).astype(int)
-    zone = sv.PolygonZone(polygon=zone_polygon, frame_resolution_wh=(1280, 720))
+    zone_polygon = (ZONE_POLYGON * np.array([1920, 1080])).astype(int)
+    zone = sv.PolygonZone(polygon=zone_polygon, frame_resolution_wh=(1920, 1080))
     zone_annotator = sv.PolygonZoneAnnotator(
         zone=zone, 
         color=sv.Color.red(),
@@ -55,6 +55,13 @@ async def websocket_endpoint(websocket: WebSocket):
             ret, frame = cap.read()
             if not ret:
                 break
+
+            # Apply software adjustments to widen the FOV
+            h, w = frame.shape[:2]
+            new_w = int(w * 1.5)  # Adjust this factor to widen the FOV
+            new_h = int(h * 1.5)
+            frame = cv2.resize(frame, (new_w, new_h))
+            frame = frame[int(new_h/2-h/2):int(new_h/2+h/2), int(new_w/2-w/2):int(new_w/2+w/2)]
 
             # Perform object detection
             results = model(frame, agnostic_nms=True)[0]
