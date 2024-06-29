@@ -2,9 +2,9 @@
   <v-container fluid>
     <v-row class="text-center">
       <v-col cols="12" class="video-container">
-        <video ref="video" class="video-stream" autoplay></video>
-        <audio ref="audio" :src="gameMusic" loop></audio>
-        <audio ref="gameOverAudio" :src="gameOverSound"></audio> <!-- 追加 -->
+        <audio ref="audio" :src="gameMusic"></audio>
+        <video ref="video" class="video-stream" autoplay @click="playMusic"></video>
+        <audio ref="gameOverAudio" :src="gameOverSound"></audio>
         <div 
           v-for="(bbox, index) in bboxes" 
           :key="index" 
@@ -19,6 +19,9 @@
         <div v-if="gameOver" class="game-over">
           <img :src="gameOverImage" alt="Game Over">
         </div>
+        <div v-if="showContinue" class="continue" @click="reloadPage">
+          <img :src="continueImage" alt="Continue">
+        </div>
       </v-col>
     </v-row>
   </v-container>
@@ -31,24 +34,25 @@ export default {
     return {
       bboxes: [],
       websocket: null,
-      videoWidth: 1280,  // 初期のビデオの幅
-      videoHeight: 720,  // 初期のビデオの高さ
-      gameOver: false,    // ゲームオーバーフラグ
-      gameOverImage: require('@/assets/game_over.gif'), // ゲームオーバー画像のインポート
-      countdown: 0,       // カウントダウンの秒数
+      videoWidth: 1280,
+      videoHeight: 720,
+      gameOver: false,
+      gameOverImage: require('@/assets/game_over.gif'),
+      continueImage: require('@/assets/continue.png'),  // Continueの画像をインポート
+      countdown: 0,
+      showContinue: false,  // Continue表示フラグ
       countdownImages: [
-        require('@/assets/3.png'), // カウントダウン画像のインポート
+        require('@/assets/3.png'),
         require('@/assets/2.png'),
         require('@/assets/1.png')
       ],
-      gameMusic: require('@/assets/sounds/mario_1.mp3'), // ゲーム音楽のインポート
-      gameOverSound: require('@/assets/sounds/game_over.mp3') // ゲームオーバー音のインポート
+      gameMusic: require('@/assets/sounds/mario_1.mp3'),
+      gameOverSound: require('@/assets/sounds/game_over.mp3')
     };
   },
   mounted() {
     this.connectWebSocket();
     this.startVideoStream();
-    this.playMusic();
   },
   methods: {
     connectWebSocket() {
@@ -69,7 +73,8 @@ export default {
       if (data.game_over) {
         this.gameOver = true;
         this.stopMusic();
-        this.playGameOverSound(); // ゲームオーバー音を再生
+        this.playGameOverSound();
+        this.showContinueWithDelay();
       } else if (data.countdown !== undefined) {
         this.countdown = data.countdown;
       } else {
@@ -77,7 +82,7 @@ export default {
       }
     },
     getCountdownImage() {
-      return this.countdownImages[3 - this.countdown]; // 修正: カウントダウン画像の順序
+      return this.countdownImages[3 - this.countdown];
     },
     getBoundingBoxStyle(bbox) {
       if (!bbox || !bbox.bbox) {
@@ -106,17 +111,25 @@ export default {
       return style;
     },
     playMusic() {
+      console.log("playMusic called");  // デバッグ用のログ
       const audioElement = this.$refs.audio;
-      audioElement.play();
+      audioElement.volume = 1.0;  // 音量を最大に設定
+      audioElement.play().catch(error => {
+        console.log("Error playing music:", error);
+      });
     },
     stopMusic() {
       const audioElement = this.$refs.audio;
       audioElement.pause();
       audioElement.currentTime = 0;
     },
-    playGameOverSound() { // ゲームオーバー音を再生するメソッド
+    playGameOverSound() {
+      console.log("playGameOverSound called");  // デバッグ用のログ
       const gameOverAudioElement = this.$refs.gameOverAudio;
-      gameOverAudioElement.play();
+      gameOverAudioElement.volume = 1.0;  // 音量を最大に設定
+      gameOverAudioElement.play().catch(error => {
+        console.log("Error playing game over sound:", error);
+      });
     },
     async startVideoStream() {
       try {
@@ -131,6 +144,16 @@ export default {
       } catch (error) {
         console.error("Error accessing the camera: ", error);
       }
+    },
+    async showContinueWithDelay() {
+      await this.sleep(3000);  // 2秒間スリープ
+      this.showContinue = true;  // Continueを表示
+    },
+    sleep(ms) {
+      return new Promise(resolve => setTimeout(resolve, ms));
+    },
+    reloadPage() {
+      window.location.reload();
     }
   },
 };
@@ -147,14 +170,15 @@ html, body, #app {
 
 .video-container {
   position: relative;
-  width: 100vw; /* Full viewport width */
-  height: 100vh; /* Full viewport height */
+  width: 100vw;
+  height: 100vh;
 }
 
 .video-stream {
   width: 100%;
   height: 100%;
-  object-fit: cover; /* Maintain aspect ratio and cover the area */
+  object-fit: cover;
+  cursor: pointer;
 }
 
 .bounding-box {
@@ -164,7 +188,7 @@ html, body, #app {
   border: 2px solid red;
   box-shadow: 0 0 10px red;
   animation: pulse 1s infinite;
-  pointer-events: none; /* Allow clicks to pass through */
+  pointer-events: none;
 }
 
 .countdown {
@@ -189,10 +213,24 @@ html, body, #app {
 }
 
 .game-over img {
-  max-width: 100%; /* 最大幅を100%に設定 */
-  max-height: 100%; /* 最大高さを100%に設定 */
-  width: 300px; /* 固定幅 */
-  height: 300px; /* 固定高さ */
+  max-width: 100%;
+  max-height: 100%;
+  width: 800px;
+  height: 800px;
   border-radius: 10px;
+}
+
+.continue {
+  position: absolute;
+  bottom: 10px;
+  right: 10px;
+  z-index: 1000;
+  cursor: pointer;
+}
+
+.continue img {
+  max-width: 100%;
+  height: auto;  
+  width: 300px; 
 }
 </style>
