@@ -5,6 +5,7 @@ from ultralytics import YOLO
 import supervision as sv
 import asyncio
 import json
+import time
 
 app = FastAPI()
 
@@ -46,6 +47,9 @@ async def websocket_endpoint(websocket: WebSocket):
         text_scale=2
     )
 
+    detection_start_time = None
+    detection_threshold = 0.8  # 80% confidence threshold
+
     try:
         while True:
             ret, frame = cap.read()
@@ -58,7 +62,7 @@ async def websocket_endpoint(websocket: WebSocket):
             # Convert YOLO results to detections
             detections = sv.Detections.from_yolov8(results)
             
-            # Generate labels and filter detections for 'person'
+            # Generate labels and filter detections for 'person' with confidence >= 80%
             labels = [
                 f"{model.model.names[class_id]} {confidence:0.2f}"
                 for _, confidence, class_id, _ in detections
@@ -75,8 +79,32 @@ async def websocket_endpoint(websocket: WebSocket):
                     ]
                 }
                 for bbox, confidence, class_id, _ in detections
+                if model.model.names[class_id] == 'person' and confidence >= detection_threshold
             ]
-            bbox_data = [item for item in bbox_data if item['label'] == 'person']
+
+            person_detected = len(bbox_data) > 0
+
+            if person_detected:
+                if detection_start_time is None:
+                    detection_start_time = time.time()
+                elapsed_time = time.time() - detection_start_time
+                if elapsed_time >= 3:
+                    await websocket.send_text(json.dumps({"countdown": 0, "game_over": True}))
+                    print("Game Over")
+                    break
+                elif elapsed_time >= 2:
+                    await websocket.send_text(json.dumps({"countdown": 1}))
+                    print("Countdown: 1")
+                elif elapsed_time >= 1:
+                    await websocket.send_text(json.dumps({"countdown": 2}))
+                    print("Countdown: 2")
+                else:
+                    await websocket.send_text(json.dumps({"countdown": 3}))
+                    print("Countdown: 3")
+            else:
+                detection_start_time = None
+                await websocket.send_text(json.dumps({"countdown": 0}))
+                print("Countdown reset")
 
             # Annotate frame with bounding boxes and zone polygon
             frame = box_annotator.annotate(scene=frame, detections=detections, labels=labels)
