@@ -5,7 +5,7 @@
         <audio ref="audio" :src="backgroundMusic" loop></audio>
         <video ref="video" class="video-stream" autoplay @click="toggleMusic"></video>
         <audio ref="gameOverAudio" :src="gameOverSound"></audio>
-        <audio ref="gameClearAudio" :src="gameClearSound"></audio> <!-- New audio element -->
+        <audio ref="gameClearAudio" :src="gameClearSound"></audio>
         <div 
           v-for="(bbox, index) in bboxes" 
           :key="index" 
@@ -25,6 +25,12 @@
         </div>
         <div v-if="showContinue" class="continue" @click="reloadPage">
           <img :src="continueImage" alt="Continue">
+        </div>
+        <div v-if="showReady" class="ready">
+          <img :src="readyImage" alt="Ready">
+        </div>
+        <div v-if="showGo" class="go">
+          <img :src="goImage" alt="Go">
         </div>
         <div class="blocks-container">
           <img v-for="n in numberOfBlocks" :key="n" :src="blockImage" class="block" />
@@ -58,8 +64,12 @@ export default {
       gameOverImage: require('@/assets/game_over.gif'),
       gameClearImage: require('@/assets/game_clear.gif'), // New image for game clear
       continueImage: require('@/assets/continue.png'),
+      readyImage: require('@/assets/ready.png'), // New image for Ready
+      goImage: require('@/assets/go.png'), // New image for Go
       countdown: 0,
       showContinue: false,
+      showReady: true, // Show Ready initially
+      showGo: false, // Show Go after Ready
       countdownImages: [
         require('@/assets/3.png'),
         require('@/assets/2.png'),
@@ -75,15 +85,25 @@ export default {
     };
   },
   mounted() {
-    this.connectWebSocket();
     this.startVideoStream();
     window.addEventListener('keydown', this.handleKeyDown);
     this.playMusic(); // 追加して音楽を再生
+    this.showReadyGoSequence();
   },
   beforeUnmount() { // Changed from beforeDestroy to beforeUnmount
     window.removeEventListener('keydown', this.handleKeyDown);
   },
   methods: {
+    showReadyGoSequence() {
+      setTimeout(() => {
+        this.showReady = false;
+        this.showGo = true;
+        setTimeout(() => {
+          this.showGo = false;
+          this.connectWebSocket(); // Start WebSocket connection after showing Ready and Go
+        }, 1000); // Show Go for 1 second
+      }, 2000); // Show Ready for 2 seconds
+    },
     connectWebSocket() {
       this.websocket = new WebSocket("ws://localhost:8000/ws");
       this.websocket.onopen = () => {
@@ -349,4 +369,20 @@ html, body, #app {
   width: 50px;
   height: 50px;
 }
+
+.ready, .go {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 1000;
+}
+
+.ready img, .go img {
+  max-width: 100%;
+  max-height: 100%;
+  width: 300px; /* 画像の幅を調整 */
+  height: 300px; /* 画像の高さを調整 */
+}
+
 </style>

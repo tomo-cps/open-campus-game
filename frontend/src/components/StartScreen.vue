@@ -3,7 +3,7 @@
       <v-row class="text-center">
         <v-col cols="12" class="start-screen-container">
           <img :src="startScreenImage" alt="Start Screen" class="start-screen-image">
-          <img :src="startButtonImage" alt="Start Button" @click="startGame" class="start-button">
+          <img :src="startButtonImage" alt="Start Button" @click="startGame" class="start-button animated-button">
         </v-col>
       </v-row>
     </v-container>
@@ -14,7 +14,7 @@
     name: 'StartScreen',
     data() {
       return {
-        startScreenImage: require('@/assets/home.png'),
+        startScreenImage: require('@/assets/home.gif'),
         startButtonImage: require('@/assets/start_button.png')
       };
     },
@@ -54,9 +54,25 @@
   
   .start-button {
     position: absolute;
-    bottom: 350px; /* 位置を調整 */
-    width: 300px; /* 画像の幅を調整 */
+    bottom: 350px; /* Final position */
+    width: 300px; /* Image width */
     cursor: pointer;
+    opacity: 0; /* Initially hidden */
+  }
+  
+  .animated-button {
+    animation: slide-up 1s ease-out 1s forwards; /* 1s delay added with 'forwards' to keep the final state */
+  }
+  
+  @keyframes slide-up {
+    from {
+      bottom: 300px; /* Starting position (adjust as needed) */
+      opacity: 0;
+    }
+    to {
+      bottom: 350px; /* Final position */
+      opacity: 1;
+    }
   }
   </style>
   
