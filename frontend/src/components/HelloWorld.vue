@@ -3,7 +3,7 @@
     <v-row class="text-center">
       <v-col cols="12" class="video-container">
         <audio ref="audio" :src="backgroundMusic" loop></audio>
-        <video ref="video" class="video-stream" autoplay @click="playMusic"></video>
+        <video ref="video" class="video-stream" autoplay @click="toggleMusic"></video>
         <audio ref="gameOverAudio" :src="gameOverSound"></audio>
         <div 
           v-for="(bbox, index) in bboxes" 
@@ -25,14 +25,24 @@
         <div class="blocks-container">
           <img v-for="n in numberOfBlocks" :key="n" :src="blockImage" class="block" />
         </div>
+        <!-- Add the music icon here -->
+        <div class="music-icon" @click="toggleMusic">
+          <svg-icon type="mdi" :path="musicIconPath"></svg-icon>
+        </div>
       </v-col>
     </v-row>
   </v-container>
 </template>
 
 <script>
+import SvgIcon from '@jamescoyle/vue-icon';
+import { mdiVolumeHigh, mdiVolumeOff } from '@mdi/js';
+
 export default {
   name: 'HelloWorld',
+  components: {
+    SvgIcon
+  },
   data() {
     return {
       bboxes: [],
@@ -52,7 +62,9 @@ export default {
       backgroundMusic: require('@/assets/sounds/mario_1.mp3'),
       gameOverSound: require('@/assets/sounds/game_over.mp3'),
       blockImage: require('@/assets/block.png'),
-      numberOfBlocks: 50 // Adjust the number of blocks you want to display
+      numberOfBlocks: 50, // Adjust the number of blocks you want to display
+      musicIconPath: mdiVolumeOff, // Default icon path for music off
+      isMusicPlaying: false // Track if the music is playing
     };
   },
   mounted() {
@@ -79,6 +91,7 @@ export default {
         this.gameOver = true;
         this.stopMusic();
         this.playGameOverSound();
+        this.pauseVideoForDuration(10000); // Pause the video for 3 seconds
         this.showContinueWithDelay();
       } else if (data.countdown !== undefined) {
         this.countdown = data.countdown;
@@ -115,11 +128,17 @@ export default {
       };
       return style;
     },
+    toggleMusic() {
+      this.isMusicPlaying ? this.stopMusic() : this.playMusic();
+    },
     playMusic() {
       const audioElement = this.$refs.audio;
       if (audioElement) {
         audioElement.volume = 1.0;
-        audioElement.play().catch(error => {
+        audioElement.play().then(() => {
+          this.isMusicPlaying = true;
+          this.musicIconPath = mdiVolumeHigh;
+        }).catch(error => {
           console.error("Error playing audio:", error);
         });
       }
@@ -129,6 +148,8 @@ export default {
       if (audioElement) {
         audioElement.pause();
         audioElement.currentTime = 0;
+        this.isMusicPlaying = false;
+        this.musicIconPath = mdiVolumeOff;
       }
     },
     playGameOverSound() {
@@ -154,8 +175,17 @@ export default {
         console.error("Error accessing the camera: ", error);
       }
     },
+    pauseVideoForDuration(duration) {
+      const videoElement = this.$refs.video;
+      if (videoElement) {
+        videoElement.pause();
+        setTimeout(() => {
+          videoElement.play();
+        }, duration);
+      }
+    },
     async showContinueWithDelay() {
-      await this.sleep(3000);
+      await this.sleep(3000); // Wait for 3 seconds
       this.showContinue = true;
     },
     sleep(ms) {
@@ -257,5 +287,18 @@ html, body, #app {
 .block {
   width: 35px; /* Adjust the size of the blocks */
   height: auto;
+}
+
+.music-icon {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  z-index: 1000;
+  cursor: pointer;
+}
+
+.music-icon svg {
+  width: 50px;
+  height: 50px;
 }
 </style>
