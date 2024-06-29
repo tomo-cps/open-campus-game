@@ -2,7 +2,7 @@
   <v-container fluid>
     <v-row class="text-center">
       <v-col cols="12" class="video-container">
-        <audio ref="audio" :src="gameMusic"></audio>
+        <audio ref="audio" :src="backgroundMusic" loop></audio>
         <video ref="video" class="video-stream" autoplay @click="playMusic"></video>
         <audio ref="gameOverAudio" :src="gameOverSound"></audio>
         <div 
@@ -22,6 +22,9 @@
         <div v-if="showContinue" class="continue" @click="reloadPage">
           <img :src="continueImage" alt="Continue">
         </div>
+        <div class="blocks-container">
+          <img v-for="n in numberOfBlocks" :key="n" :src="blockImage" class="block" />
+        </div>
       </v-col>
     </v-row>
   </v-container>
@@ -38,16 +41,18 @@ export default {
       videoHeight: 720,
       gameOver: false,
       gameOverImage: require('@/assets/game_over.gif'),
-      continueImage: require('@/assets/continue.png'),  // Continueの画像をインポート
+      continueImage: require('@/assets/continue.png'),
       countdown: 0,
-      showContinue: false,  // Continue表示フラグ
+      showContinue: false,
       countdownImages: [
         require('@/assets/3.png'),
         require('@/assets/2.png'),
         require('@/assets/1.png')
       ],
-      gameMusic: require('@/assets/sounds/mario_1.mp3'),
-      gameOverSound: require('@/assets/sounds/game_over.mp3')
+      backgroundMusic: require('@/assets/sounds/mario_1.mp3'),
+      gameOverSound: require('@/assets/sounds/game_over.mp3'),
+      blockImage: require('@/assets/block.png'),
+      numberOfBlocks: 50 // Adjust the number of blocks you want to display
     };
   },
   mounted() {
@@ -111,25 +116,29 @@ export default {
       return style;
     },
     playMusic() {
-      console.log("playMusic called");  // デバッグ用のログ
       const audioElement = this.$refs.audio;
-      audioElement.volume = 1.0;  // 音量を最大に設定
-      audioElement.play().catch(error => {
-        console.log("Error playing music:", error);
-      });
+      if (audioElement) {
+        audioElement.volume = 1.0;
+        audioElement.play().catch(error => {
+          console.error("Error playing audio:", error);
+        });
+      }
     },
     stopMusic() {
       const audioElement = this.$refs.audio;
-      audioElement.pause();
-      audioElement.currentTime = 0;
+      if (audioElement) {
+        audioElement.pause();
+        audioElement.currentTime = 0;
+      }
     },
     playGameOverSound() {
-      console.log("playGameOverSound called");  // デバッグ用のログ
       const gameOverAudioElement = this.$refs.gameOverAudio;
-      gameOverAudioElement.volume = 1.0;  // 音量を最大に設定
-      gameOverAudioElement.play().catch(error => {
-        console.log("Error playing game over sound:", error);
-      });
+      if (gameOverAudioElement) {
+        gameOverAudioElement.volume = 1.0;
+        gameOverAudioElement.play().catch(error => {
+          console.error("Error playing game over sound:", error);
+        });
+      }
     },
     async startVideoStream() {
       try {
@@ -146,8 +155,8 @@ export default {
       }
     },
     async showContinueWithDelay() {
-      await this.sleep(3000);  // 2秒間スリープ
-      this.showContinue = true;  // Continueを表示
+      await this.sleep(3000);
+      this.showContinue = true;
     },
     sleep(ms) {
       return new Promise(resolve => setTimeout(resolve, ms));
@@ -222,7 +231,7 @@ html, body, #app {
 
 .continue {
   position: absolute;
-  bottom: 10px;
+  bottom: 30px;
   right: 10px;
   z-index: 1000;
   cursor: pointer;
@@ -232,5 +241,21 @@ html, body, #app {
   max-width: 100%;
   height: auto;  
   width: 300px; 
+}
+
+.blocks-container {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background-color: transparent;
+}
+
+.block {
+  width: 35px; /* Adjust the size of the blocks */
+  height: auto;
 }
 </style>
