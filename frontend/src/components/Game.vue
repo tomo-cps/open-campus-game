@@ -98,13 +98,9 @@ export default {
       const musicFiles = [
         require('@/assets/sounds/01_mario_bgm.mp3'),
         require('@/assets/sounds/02_mario_bgm.mp3'),
-        require('@/assets/sounds/01_mario_bgm.mp3'),
         require('@/assets/sounds/03_mario_bgm.mp3'),
-        require('@/assets/sounds/01_mario_bgm.mp3'),
         require('@/assets/sounds/04_mario_bgm.mp3'),
-        require('@/assets/sounds/01_mario_bgm.mp3'),
-        require('@/assets/sounds/05_mario_bgm.mp3'),
-        require('@/assets/sounds/01_mario_bgm.mp3')
+        require('@/assets/sounds/05_mario_bgm.mp3')
       ];
       this.backgroundMusic = musicFiles[Math.floor(Math.random() * musicFiles.length)];
       this.$nextTick(() => {
