@@ -98,9 +98,13 @@ export default {
       const musicFiles = [
         require('@/assets/sounds/01_mario_bgm.mp3'),
         require('@/assets/sounds/02_mario_bgm.mp3'),
+        require('@/assets/sounds/01_mario_bgm.mp3'),
         require('@/assets/sounds/03_mario_bgm.mp3'),
+        require('@/assets/sounds/01_mario_bgm.mp3'),
         require('@/assets/sounds/04_mario_bgm.mp3'),
-        require('@/assets/sounds/05_mario_bgm.mp3')
+        require('@/assets/sounds/01_mario_bgm.mp3'),
+        require('@/assets/sounds/05_mario_bgm.mp3'),
+        require('@/assets/sounds/01_mario_bgm.mp3')
       ];
       this.backgroundMusic = musicFiles[Math.floor(Math.random() * musicFiles.length)];
       this.$nextTick(() => {
@@ -255,12 +259,16 @@ export default {
       window.location.reload();
     },
     handleKeyDown(event) {
-      if (event.code === 'Space' && !this.gameOver) {
-        this.gameClear = true;
-        this.stopMusic();
-        this.playGameClearSound();
-        this.pauseVideoForDuration(10000);
-        this.showContinueWithDelay();
+      if (event.code === 'Space' || event.code === 'Enter') { // Add check for 'Enter' key
+        if (!this.gameOver) {
+          this.gameClear = true;
+          this.stopMusic();
+          this.playGameClearSound();
+          this.pauseVideoForDuration(10000);
+          this.showContinueWithDelay();
+        } else if (this.showContinue) { // If the game is over and "Continue" is shown, reload the page
+          this.reloadPage();
+        }
       }
     }
   },
@@ -397,7 +405,7 @@ html, body, #app {
 .ready img, .go img {
   max-width: 100%;
   max-height: 100%;
-  width: 300px;
-  height: 300px;
+  /* width: 300px; */
+  height: 250px;
 }
 </style>
