@@ -63,7 +63,7 @@ export default {
       gameClear: false,
       gameOverImage: require('@/assets/game_over.gif'),
       gameClearImage: require('@/assets/game_clear_v3.gif'),
-      continueImage: require('@/assets/continue.png'),
+      continueImage: require('@/assets/02_continue.png'),
       readyImage: require('@/assets/ready.png'),
       goImage: require('@/assets/go.png'),
       countdown: 0,
