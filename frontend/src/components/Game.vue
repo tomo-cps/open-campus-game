@@ -26,6 +26,9 @@
         <div v-if="showContinue" class="continue" @click="reloadPage">
           <img :src="continueImage" alt="Continue">
         </div>
+        <div v-if="showHome" class="home-button" @click="goBackHome">
+          <img :src="homeButtonImage" alt="home-button">
+        </div>
         <div v-if="showReady" class="ready">
           <img :src="readyImage" alt="Ready">
         </div>
@@ -64,10 +67,12 @@ export default {
       gameOverImage: require('@/assets/game_over.gif'),
       gameClearImage: require('@/assets/game_clear_v3.gif'),
       continueImage: require('@/assets/02_continue.png'),
+      homeButtonImage: require('@/assets/home_button.png'),
       readyImage: require('@/assets/ready.png'),
       goImage: require('@/assets/go.png'),
       countdown: 0,
       showContinue: false,
+      showHome: false,
       showReady: true,
       showGo: false,
       countdownImages: [
@@ -142,6 +147,7 @@ export default {
           this.playGameOverSound();
           this.pauseVideoForDuration(10000);
           this.showContinueWithDelay();
+          this.showHomeWithDelay();
         }
       } else if (data.countdown !== undefined) {
         this.countdown = data.countdown;
@@ -248,12 +254,20 @@ export default {
       await this.sleep(3000);
       this.showContinue = true;
     },
+    async showHomeWithDelay() {
+      await this.sleep(3000);
+      this.showHome = true;
+    },
     sleep(ms) {
       return new Promise(resolve => setTimeout(resolve, ms));
     },
     reloadPage() {
       window.location.reload();
     },
+    goBackHome() {
+      this.$router.push('/');
+    },
+
     handleKeyDown(event) {
       if (event.code === 'Space' || event.code === 'Enter') { // Add check for 'Enter' key
         if (!this.gameOver) {
@@ -262,6 +276,7 @@ export default {
           this.playGameClearSound();
           this.pauseVideoForDuration(10000);
           this.showContinueWithDelay();
+          this.showHomeWithDelay();
         } else if (this.showContinue) { // If the game is over and "Continue" is shown, reload the page
           this.reloadPage();
         }
@@ -359,6 +374,20 @@ html, body, #app {
   max-width: 100%;
   height: auto;  
   width: 300px; 
+}
+
+.home-button {
+  position: absolute;
+  bottom: 30px;
+  left: 12px;
+  z-index: 1000;
+  cursor: pointer;
+}
+
+.home-button img {
+  /* max-width: 100%; */
+  height: auto;  
+  width: 75px; 
 }
 
 .blocks-container {
