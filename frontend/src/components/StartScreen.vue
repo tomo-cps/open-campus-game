@@ -70,7 +70,7 @@
       opacity: 0;
     }
     to {
-      bottom: 300px; /* Final position */
+      bottom: 330px; /* Final position */
       opacity: 1;
     }
   }
