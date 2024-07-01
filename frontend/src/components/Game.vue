@@ -387,7 +387,7 @@ html, body, #app {
 .home-button img {
   /* max-width: 100%; */
   height: auto;  
-  width: 75px; 
+  width: 60px; 
 }
 
 .blocks-container {
