@@ -84,7 +84,7 @@ export default {
       gameOverSound: require('@/assets/sounds/game_over.mp3'),
       gameClearSound: require('@/assets/sounds/game_clear.mp3'),
       blockImage: require('@/assets/block.png'),
-      numberOfBlocks: 50,
+      numberOfBlocks: 60,
       musicIconPath: mdiVolumeHigh, // Ensure the icon is set to volume high initially
       isMusicPlaying: true // Ensure music is playing initially
     };
